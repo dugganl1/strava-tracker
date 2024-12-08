@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime
 
 import requests
 
@@ -7,6 +8,7 @@ from config import STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, STRAVA_TOKEN_URL
 
 
 def get_valid_token():
+    # This function stays the same as before
     with open(".strava_tokens.json", "r") as f:
         tokens = json.load(f)
 
@@ -39,26 +41,29 @@ def get_activities(limit=10):
     )
 
     if response.ok:
-        activities = response.json()
-        for activity in activities:
-            # Convert date to more readable format
-            date = activity["start_date_local"].split("T")[0]
-            time = activity["start_date_local"].split("T")[1][:5]
+        return response.json()
+    else:
+        print(f"Error: {response.status_code}")
+        print(response.text)
+        return None
 
-            # Convert speed to min/km pace if it's a run
-            if activity["type"] == "Run":
-                # Speed comes in meters/second, convert to min/km
-                pace = 16.6667 / activity["average_speed"]  # 16.6667 = 1000/60
-                pace_mins = int(pace)
-                pace_secs = int((pace - pace_mins) * 60)
-                pace_str = f"{pace_mins}:{pace_secs:02d} /km"
-            else:
-                pace_str = (
-                    f"{activity['average_speed'] * 3.6:.1f} km/h"  # Convert to km/h
-                )
 
-            print(
-                f"""
+def display_activity(activity):
+    # Convert date to more readable format
+    date = activity["start_date_local"].split("T")[0]
+    time = activity["start_date_local"].split("T")[1][:5]
+
+    # Convert speed to min/km pace if it's a run
+    if activity["type"] == "Run":
+        pace = 16.6667 / activity["average_speed"]
+        pace_mins = int(pace)
+        pace_secs = int((pace - pace_mins) * 60)
+        pace_str = f"{pace_mins}:{pace_secs:02d} /km"
+    else:
+        pace_str = f"{activity['average_speed'] * 3.6:.1f} km/h"
+
+    print(
+        f"""
 Activity: {activity['name']}
 Date: {date} at {time}
 Type: {activity['type']}
@@ -66,22 +71,43 @@ Distance: {activity['distance']/1000:.2f}km
 Duration: {activity['moving_time']/60:.0f} minutes
 Pace: {pace_str}
 Elevation Gain: {activity['total_elevation_gain']}m""",
-                end="",
-            )
+        end="",
+    )
 
-            # Only print if the data exists
-            if activity.get("average_heartrate"):
-                print(f"\nAverage Heart Rate: {activity['average_heartrate']:.0f} bpm")
+    if activity.get("average_heartrate"):
+        print(f"\nAverage Heart Rate: {activity['average_heartrate']:.0f} bpm")
 
-            if activity.get("kudos_count"):
-                print(f"\nKudos: {activity['kudos_count']}")
+    if activity.get("kudos_count"):
+        print(f"\nKudos: {activity['kudos_count']}")
 
-            print("\n----------------------------------------")
+    print("\n----------------------------------------")
 
-    else:
-        print(f"Error: {response.status_code}")
-        print(response.text)
+
+def monitor_new_activities():
+    print("Starting Strava activity monitor...")
+    print("Checking every 5 minutes for new activities (Press Ctrl+C to stop)")
+
+    latest_activity_id = None
+
+    try:
+        while True:
+            current_time = datetime.now().strftime("%H:%M:%S")
+            activities = get_activities(limit=1)
+
+            if activities and (
+                latest_activity_id is None or activities[0]["id"] != latest_activity_id
+            ):
+                if latest_activity_id is not None:  # Don't show on first run
+                    print("\n🏃 New activity detected! 🏃")
+                latest_activity_id = activities[0]["id"]
+                display_activity(activities[0])
+
+            print(f"\rLast checked: {current_time}", end="", flush=True)
+            time.sleep(300)  # 5 minutes = 300 seconds
+
+    except KeyboardInterrupt:
+        print("\nStopping activity monitor")
 
 
 if __name__ == "__main__":
-    get_activities()
+    monitor_new_activities()
