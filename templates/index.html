@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Running Receipt - {{ activity.name }}</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}"
+    />
+  </head>
+  <body>
+    <div class="receipt">
+      <h1>YOU'VE PAID YOUR BILLS!</h1>
+
+      <div class="date-section">
+        <div class="dotted-border"></div>
+        <div class="flex-between">
+          <span>{{ activity.date }}</span>
+          <span>{{ activity.time }}</span>
+        </div>
+        <div class="dotted-border"></div>
+      </div>
+
+      <div class="splits-header flex-between">
+        <span>KM</span>
+        <span>TIME</span>
+      </div>
+
+      <div id="splits-container">
+        {% for split in activity.splits %}
+        <div class="flex-between">
+          <span>{{ split.km }}</span>
+          <span>{{ split.time }}</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="summary-section">
+        <div class="dotted-border"></div>
+        <div class="summary-stats">
+          <div class="flex-between">
+            <span>DISTANCE (km)</span>
+            <span>{{ activity.stats.distance }}</span>
+          </div>
+          <div class="flex-between">
+            <span>MOVING TIME (m)</span>
+            <span>{{ activity.stats.moving_time }}</span>
+          </div>
+          <div class="flex-between">
+            <span>AVG PACE (m/km)</span>
+            <span>{{ activity.stats.avg_pace }}</span>
+          </div>
+        </div>
+        <div class="dotted-border"></div>
+      </div>
+
+      <div class="footer">
+        <span>PLEASE RUN AGAIN SOON</span>
+        <span>THANK YOU</span>
+      </div>
+
+      <div class="dotted-border"></div>
+
+      <div class="barcode-section">
+        <svg
+          class="barcode"
+          viewBox="0 0 100 40"
+        >
+          <!-- Barcode rectangles remain the same -->
+        </svg>
+        <span class="motto">YOU CAN DO HARD THINGS</span>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  </body>
+</html>

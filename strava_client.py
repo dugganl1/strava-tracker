@@ -83,6 +83,38 @@ Elevation Gain: {activity['total_elevation_gain']}m""",
     print("\n----------------------------------------")
 
 
+def format_activity_for_receipt(activity):
+    # Calculate splits from the activity data
+    splits = []
+    if activity.get("splits_metric"):
+        for split in activity["splits_metric"]:
+            splits.append(
+                {
+                    "km": f"{split['split']:.0f}".zfill(2),  # Zero pad to 2 digits
+                    "time": f"{split['moving_time'] // 60}:{(split['moving_time'] % 60):02d}",
+                }
+            )
+
+    # Format pace
+    avg_pace_seconds = (
+        activity["moving_time"] / activity["distance"]
+    ) * 1000  # Convert to min/km
+    avg_pace_mins = int(avg_pace_seconds // 60)
+    avg_pace_secs = int(avg_pace_seconds % 60)
+
+    return {
+        "date": activity["start_date_local"].split("T")[0],
+        "time": activity["start_date_local"].split("T")[1][:5],
+        "splits": splits,
+        "stats": {
+            "distance": f"{activity['distance']/1000:.2f}",
+            "moving_time": f"{activity['moving_time']//60}:{(activity['moving_time']%60):02d}",
+            "avg_pace": f"{avg_pace_mins}:{avg_pace_secs:02d}",
+        },
+        "name": activity["name"],
+    }
+
+
 def monitor_new_activities():
     print("Starting Strava activity monitor...")
     print("Checking every 5 minutes for new activities (Press Ctrl+C to stop)")
